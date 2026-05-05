@@ -1,0 +1,55 @@
+project-root
+	docs/ (for written documentation or diagrams)
+		images/ (images/pictures/graphs for the markdown files in the wiki)
+		wiki/ (wiki describing use of project or anything relevant to users)
+			building.md user-manual.md installing.md
+		dev/ (design documents like system description or uml diagrams intended for developers)
+			system-description.md software-architecture.puml repo-structure.md branching.md contributing.md
+		
+	middleware/ (for middleware (or third-party libraries) like cherryusb, ideally included as submodules that do not need to be modified)
+		cherryusb/
+		
+	platforms/ (platform specific code providing access to mcu control (e.g. timers, interrupts, etc) and peripherals (e.g. gpio, i2c, spi, etc)) and implementations of hardware abstractions (e.g. led, radio, display, memory, etc). Again each layer depends only on the layer(s) below it.
+		uv-k1-k5v3/
+			2_hal/ (implementation matching interfaces defined in src/2_hal)
+				led.cpp radio.cpp display.cpp memory.cpp input.cpp audio.cpp settings.cpp time.cpp power.cpp console.cpp
+			3_hardware/ (hardware proxies or drivers of components of platform)
+				py32f071.h py32f071.cpp bk4819.h bk4819.cpp
+			4_cmsis/ (vendor libraries for cortex-m0+ platform)
+			boot/
+				py32f071_init.cpp startup.s
+			Makefile (platform specific makefile should provide recipes that produce file that can be deployed to target platform)
+			linker.ld
+		uv-k5/
+			2_hal/ (platform specific implementations of abstracted modules)
+				led.cpp radio.cpp display.cpp memory.cpp input.cpp audio.cpp settings.cpp time.cpp power.cpp console.cpp
+			3_hardware/ (proxies for the hardware components of the platform)
+				dp32g030.h dp32g030.cpp bk4819.h bk4819.cpp
+			boot/
+				dp32g030_init.c startup.s
+			Makefile linker.ld
+		emscriptem/
+			2_hal/
+				led.cpp radio.cpp display.cpp memory.cpp input.cpp audio.cpp settings.cpp time.cpp power.cpp console.cpp
+			3_sim/
+				index.html
+			boot/
+				em_init.cpp
+			Makefile
+		
+	src/ (layered file structure where each layer only depends on components in the layer below it, this should all be portable platform agnostic code)
+		0_app/ (app layer for applications)
+			dualwatch.{cpp,h} messenger.{cpp,h} dongle.{cpp,h} blink.{cpp,h} amfm.{cpp,h}
+		1_logic/ (logic layer to provide execution logic/framework (e.g. scheduler, included apps, settings menu) thismain provides the interface to the apps (e.g.) entry point, event interrupt.)
+			scheduler.{cpp,h} app.h menu.{cpp,h}
+		2_hal/ (hardware abstraction layer providing platform agnostic, portable interfaces (e.g. led, radio, display, memory, etc) implemented by platform)
+			led.h receiver.h transmitter.h speaker.h microphone.h display.h memory.h keys.h time.h battery.h console.h 
+		main.cpp buildinfo.h Makefile
+		
+	build/ (containing resources needed for building the project)
+		Dockerfile (for building, not as deployment target, need to figure out how to get output file out of container)
+		Makefile  (Wrapper which invokes/includes target platform makefile)
+		
+	scripts/ (scripts to make the life of the user of the repo easier, could also be used by build or CI system)
+		build-with-docker.sh generate-buildinfo-header.sh check-dependencies.sh app-template.py
+	
