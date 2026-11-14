@@ -58,7 +58,13 @@ _estack = ORIGIN(RAM) + LENGTH(RAM);    /* end of RAM */
 _Min_Heap_Size = 0x200;      /* required amount of heap  */
 _Min_Stack_Size = 0x400; /* required amount of stack */
 
-/* Specify the memory areas */
+/* Specify the memory areas.
+ *
+ * FLASH starts at 0x08002800 because the stock bootloader owns the first
+ * 10 KiB (0x2800 bytes) of the 128 KiB flash. The application therefore has
+ * 118 KiB available. Startup code copies .data from flash to RAM using the
+ * symbols generated below.
+ */
 MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 16K
@@ -173,15 +179,11 @@ SECTIONS
     . = ALIGN(8);
   } >RAM
 
-  
-
-  /* Remove information from the standard libraries */
-  /DISCARD/ :
-  {
-    libc.a ( * )
-    libm.a ( * )
-    libgcc.a ( * )
-  }
+  /* Do not discard libc/libm/libgcc sections here. The previous versions of
+   * this script removed all sections from those libraries while the link line
+   * explicitly asked for them. That makes newlib startup helpers disappear and
+   * produces confusing link errors. --gc-sections already removes unused
+   * functions safely. */
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
 }

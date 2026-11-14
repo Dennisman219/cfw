@@ -1,62 +1,108 @@
-PLATFORM ?= uv-k1-k5v3
-PROJECT_ROOT := $(shell pwd)
-PLATFORM_DIR := $(PROJECT_ROOT)/platforms/$(PLATFORM)
-BUILD_DIR := $(PROJECT_ROOT)/build/$(PLATFORM)
-SRC_DIR := $(PROJECT_ROOT)/src
-OBJ_DIR := $(BUILD_DIR)
+################################################################################
+# Top-level build entry point
+#
+# Usage:
+#   make                     build the default platform (uv-k1-k5v3)
+#   make PLATFORM=<name>     build another platform
+#   make clean               remove the build output of the selected platform
+#   make size                show the size of the firmware sections
+#   make verify              sanity-check the generated .bin
+#
+# Platform-specific tools, flags and source lists live in
+# platforms/<name>/Makefile. This file only knows how to turn sources into
+# objects, link them, and produce files that can be flashed.
+################################################################################
 
-# Include platform configuration
+PLATFORM ?= uv-k1-k5v3
+PYTHON   ?= python3
+
+# Derive all paths from this Makefile so the build also works when make is
+# invoked from another directory (for example by an editor or CI job).
+PROJECT_ROOT := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+SRC_DIR      := $(PROJECT_ROOT)/src
+PLATFORM_DIR := $(PROJECT_ROOT)/platforms/$(PLATFORM)
+BUILD_DIR    := $(PROJECT_ROOT)/build/$(PLATFORM)
+OBJ_DIR      := $(BUILD_DIR)/obj
+
+# The platform Makefile defines the toolchain, TARGET, flags and sources.
 include $(PLATFORM_DIR)/Makefile
 
-# Discover source files
-PORTABLE_SRCS := $(shell find $(SRC_DIR) -type f \( -name "*.cpp" -o -name "*.c" \))
-ALL_SRCS := $(PORTABLE_SRCS) $(PLATFORM_SRCS)
+# Build artifacts. TARGET is defined by the platform Makefile.
+ELF := $(BUILD_DIR)/$(TARGET)
+BIN := $(ELF:.elf=.bin)
+HEX := $(ELF:.elf=.hex)
+MAP := $(ELF:.elf=.map)
 
-# Convert to object files
-PORTABLE_OBJS := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/src/%.o,$(filter %.cpp,$(PORTABLE_SRCS)))
-PORTABLE_OBJS += $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/src/%.o,$(filter %.c,$(PORTABLE_SRCS)))
+# Portable sources are discovered automatically, so adding a new file under
+# src/ does not require editing this Makefile. Every .c/.cpp file is compiled.
+PORTABLE_SRCS := $(shell find $(SRC_DIR) -type f \( -name '*.c' -o -name '*.cpp' \) | sort)
+PORTABLE_OBJS := $(addprefix $(OBJ_DIR)/src/,$(patsubst $(SRC_DIR)/%,%,$(PORTABLE_SRCS)))
+PORTABLE_OBJS := $(PORTABLE_OBJS:.c=.o)
+PORTABLE_OBJS := $(PORTABLE_OBJS:.cpp=.o)
 
-PLATFORM_OBJS := $(patsubst $(PLATFORM_DIR)/%.cpp,$(OBJ_DIR)/plat/%.o,$(filter %.cpp,$(PLATFORM_SRCS)))
-PLATFORM_OBJS += $(patsubst $(PLATFORM_DIR)/%.c,$(OBJ_DIR)/plat/%.o,$(filter %.c,$(PLATFORM_SRCS)))
-PLATFORM_OBJS += $(patsubst $(PLATFORM_DIR)/%.s,$(OBJ_DIR)/plat/%.o,$(filter %.s,$(PLATFORM_SRCS)))
+# Platform sources are listed explicitly in the platform Makefile. That keeps
+# experimental or unsupported files out of the build.
+PLATFORM_OBJS := $(addprefix $(OBJ_DIR)/platform/,$(PLATFORM_SRCS))
+PLATFORM_OBJS := $(PLATFORM_OBJS:.c=.o)
+PLATFORM_OBJS := $(PLATFORM_OBJS:.cpp=.o)
+PLATFORM_OBJS := $(PLATFORM_OBJS:.s=.o)
 
 ALL_OBJS := $(PORTABLE_OBJS) $(PLATFORM_OBJS)
 
-# Include paths
-INCLUDES := -I$(SRC_DIR) -I$(SRC_DIR)/0_app -I$(SRC_DIR)/1_logic -I$(SRC_DIR)/2_hal \
-            -I$(PLATFORM_DIR) -I$(PLATFORM_DIR)/2_hal -I$(PLATFORM_DIR)/3_hpl -I$(PLATFORM_DIR)/4_pal -I$(PLATFORM_DIR)/boot
+# -MMD -MP lets the compiler write a .d file next to every object. These files
+# are included at the bottom of this Makefile and make header changes trigger a
+# rebuild of the files that use them.
+CPPFLAGS := $(PLATFORM_CPPFLAGS) $(PLATFORM_INCLUDES) -MMD -MP
 
-# ============================================================================
-# Targets
-# ============================================================================
+.PHONY: all clean size verify
 
-.PHONY: all clean info
+# The default target builds everything that can be flashed and then prints a
+# short size summary, which makes accidentally growing the image obvious.
+all: $(BIN) $(HEX)
+	@echo
+	$(SIZE) $(ELF)
 
-all: $(BUILD_DIR)/$(TARGET)
-
-$(BUILD_DIR)/$(TARGET): $(ALL_OBJS)
-	mkdir -p $(dir $@)
+$(ELF): $(ALL_OBJS) $(LDSCRIPT)
+	@mkdir -p $(dir $@)
 	$(LD) $(LDFLAGS) -T$(LDSCRIPT) -o $@ $(ALL_OBJS) $(LDLIBS)
 
-$(OBJ_DIR)/src/%.o: $(SRC_DIR)/%.cpp
-	mkdir -p $(dir $@)
-	$(CXX) $(INCLUDES) $(CXXFLAGS) -c $< -o $@
+$(BIN): $(ELF)
+	$(OBJCOPY) -O binary $< $@
+
+$(HEX): $(ELF)
+	$(OBJCOPY) -O ihex $< $@
 
 $(OBJ_DIR)/src/%.o: $(SRC_DIR)/%.c
-	mkdir -p $(dir $@)
-	$(CC) $(INCLUDES) $(CFLAGS) -c $< -o $@
+	@mkdir -p $(dir $@)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-$(OBJ_DIR)/plat/%.o: $(PLATFORM_DIR)/%.cpp
-	mkdir -p $(dir $@)
-	$(CXX) $(INCLUDES) $(CXXFLAGS) -c $< -o $@
+$(OBJ_DIR)/src/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
-$(OBJ_DIR)/plat/%.o: $(PLATFORM_DIR)/%.c
-	mkdir -p $(dir $@)
-	$(CC) $(INCLUDES) $(CFLAGS) -c $< -o $@
+$(OBJ_DIR)/platform/%.o: $(PLATFORM_DIR)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-$(OBJ_DIR)/plat/%.o: $(PLATFORM_DIR)/%.s
-	mkdir -p $(dir $@)
-	$(CC) $(INCLUDES) $(ASFLAGS) -c $< -o $@
+$(OBJ_DIR)/platform/%.o: $(PLATFORM_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/platform/%.o: $(PLATFORM_DIR)/%.s
+	@mkdir -p $(dir $@)
+	$(CC) $(CPPFLAGS) $(ASFLAGS) -c $< -o $@
+
+size: $(ELF)
+	$(SIZE) $(ELF)
+
+# Check the first two vector table entries and the maximum image size. This
+# catches the most common boot failures without needing the radio.
+verify: $(BIN)
+	$(PYTHON) $(PROJECT_ROOT)/scripts/verify_image.py $(BIN)
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+# Dependency files generated by -MMD. The leading '-' means "do not complain
+# when they do not exist yet" (for example after a fresh clone).
+-include $(ALL_OBJS:.o=.d)
