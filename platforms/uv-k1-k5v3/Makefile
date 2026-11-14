@@ -64,4 +64,4 @@ PLATFORM_INCLUDES := \
 # Paths are relative to this platform directory.
 PLATFORM_SRCS := \
 	boot/startup_py32f071xx.s \
-	boot/py32f071xx_init.c
+	boot/system_py32f071.c

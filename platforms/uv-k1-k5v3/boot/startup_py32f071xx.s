@@ -72,7 +72,7 @@ Reset_Handler:
   ldr   r0, =_estack
   mov   sp, r0          /* set stack pointer */
 
-/* Call the clock system initialization function.*/
+/* Relocate the vector table. The bootloader has already configured the clock. */
   bl  SystemInit
 
 /* Copy the data segment initializers from flash to SRAM */
@@ -132,14 +132,14 @@ Infinite_Loop:
 
 /******************************************************************************
 *
-* The minimal vector table for a Cortex M0.  Note that the proper constructs
-* must be placed on this to ensure that it ends up at physical address
-* 0x0000.0000.
+* The vector table for the application. The linker script places the
+* .isr_vector section at 0x08002800. The Cortex-M0+ still fetches the reset
+* vector from address 0 after power-on, which is why the bootloader jumps here.
+* SystemInit() then points VTOR at this table so interrupts use it too.
 *
 ******************************************************************************/
   .section .isr_vector,"a",%progbits
   .type g_pfnVectors, %object
-  .size g_pfnVectors, .-g_pfnVectors
 
 g_pfnVectors:
   .word _estack
@@ -190,6 +190,8 @@ g_pfnVectors:
   .word USART3_IRQHandler                 /* USART3                       */
   .word 0                                 /* 0                          */
   .word USB_IRQHandler                    /* USB                          */
+
+  .size g_pfnVectors, .-g_pfnVectors
 
 /*******************************************************************************
 *
