@@ -106,6 +106,12 @@ Rules for this milestone:
 The `.bin` file starts with the application vector table. If your tool needs an
 explicit load address, use `0x08002800`.
 
+The ELF is linked with a small segment alignment (`-z max-page-size=8`). Without
+it, the first load segment would be aligned down to `0x08002000` and a tool
+that flashes ELF segments could overwrite the last 2 KiB of the bootloader.
+With the alignment the ELF only covers the application area. Flashing the
+`.bin` at `0x08002800` is still the most explicit and preferred method.
+
 ## Recovery
 
 Because the stock bootloader is not modified, a bad application image should
