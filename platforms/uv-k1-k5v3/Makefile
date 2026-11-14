@@ -68,5 +68,6 @@ PLATFORM_SRCS := \
 	boot/startup_py32f071xx.s \
 	boot/system_py32f071.c \
 	2_hal/platform.cpp \
+	3_hardware/board.cpp \
 	3_hardware/fault.cpp \
 	3_hardware/timebase.cpp

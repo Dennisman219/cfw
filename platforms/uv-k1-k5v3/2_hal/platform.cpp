@@ -9,6 +9,7 @@
 
 #include "Platform.h"
 
+#include "board.h"
 #include "timebase.h"
 
 namespace platform
@@ -16,13 +17,16 @@ namespace platform
 
 void init()
 {
+    // Configure pins first, then start the timebase that drives the heartbeat.
+    board_init();
     time_init();
 }
 
 void poll()
 {
-    // The boot heartbeat is added in the next commit. Until then the main loop
-    // only needs to let the SysTick interrupt run.
+    // No blocking work here: the main loop must stay responsive for the
+    // application framework that will be added in later milestones.
+    board_poll();
 }
 
 } // namespace platform
