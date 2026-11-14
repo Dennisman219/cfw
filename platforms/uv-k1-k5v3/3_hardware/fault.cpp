@@ -28,7 +28,7 @@ constexpr uint32_t kBacklightPin = LL_GPIO_PIN_8;
  */
 void fault_delay()
 {
-    for (volatile uint32_t i = 0; i < 400000U; ++i) {
+    for (volatile uint32_t i = 0; i < 1000000U; ++i) {
         // Intentionally empty.
     }
 }
