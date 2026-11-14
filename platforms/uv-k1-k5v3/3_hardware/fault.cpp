@@ -3,7 +3,7 @@
  * @brief Hard-fault handler and visible fault indication.
  *
  * The handler configures the backlight pin itself instead of relying on the
- * normal board initialization. A fault can happen before board_init() has run,
+ * normal hardware initialization. A fault can happen before that code has run,
  * so the fault path must be self-contained.
  */
 

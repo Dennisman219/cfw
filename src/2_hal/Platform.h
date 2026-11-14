@@ -25,9 +25,9 @@ void init();
 /**
  * @brief Run one iteration of background platform work.
  *
- * Called repeatedly from the main loop. In this milestone it only drives the
- * boot heartbeat. Later the application framework will call this between
- * application updates, so it must return quickly and must not block.
+ * Called repeatedly from the main loop. It must return quickly and must not
+ * block. A platform with no background work may leave this empty. Later the
+ * application framework will call this between application updates.
  */
 void poll();
 

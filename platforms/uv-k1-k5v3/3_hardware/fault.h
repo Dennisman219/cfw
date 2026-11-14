@@ -13,8 +13,7 @@ namespace platform
  * @brief Stop the firmware and show a fast backlight blink.
  *
  * Interrupts are disabled and the function never returns. The fast blink
- * pattern (~5 Hz) is intentionally different from the 1 Hz boot heartbeat, so
- * a crashed firmware can be recognized without a debugger.
+ * pattern (~5 Hz) makes a crashed firmware recognizable without a debugger.
  */
 [[noreturn]] void panic();
 

@@ -1,8 +1,8 @@
 # Building, flashing and recovery (UV-K1 / UV-K5(8) v3)
 
-This document describes milestone 1: a firmware image that builds, boots and
-shows a heartbeat on the display backlight. It does not use the display, keys,
-radio, audio or external flash yet.
+This document describes milestone 1: a firmware image that builds and boots,
+with a fast backlight blink if a hard fault occurs. It does not use the
+display, keys, radio, audio or external flash yet.
 
 ## Build
 
@@ -64,30 +64,27 @@ clock configuration must be revisited first.
 
 ## Expected boot behavior
 
-After reset and a successful boot, the display backlight flashes:
+Normal operation has no user-visible indicator in this build. A successful
+boot relocates the vector table, starts the 1 ms timebase and enters the main
+loop.
 
-- on for about 50 ms,
-- once per second,
-- continuously.
+A hard fault produces a fast backlight blink (roughly 5 Hz, 100 ms on/off).
+The fault handler configures the backlight pin itself, so it also works if the
+fault happens before the application has initialized the hardware.
 
-This heartbeat proves that the reset vector, vector-table relocation, clock,
-SysTick interrupt, main loop and backlight GPIO are working.
+Because there is no boot heartbeat, confirm a successful boot with SWD:
 
-A hard fault instead produces a fast blink (roughly 5 Hz, 100 ms on/off). The
-fault handler configures the backlight pin itself, so it also works if the
-fault happens before normal board initialization.
+1. verify the image was flashed at `0x08002800`, not at `0x08000000`,
+2. verify the bootloader still jumps to the application,
+3. inspect `SCB->VTOR` and check that it is `0x08002800`,
+4. confirm execution reaches `main()` and that `SysTick_Handler` is called,
+5. confirm the radio is a PY32F071xB-based UV-K1 / UV-K5(8) v3.
 
-If the backlight stays off, check in this order:
-
-1. the image was flashed at `0x08002800`, not at `0x08000000`,
-2. the bootloader still jumps to the application,
-3. the radio is a PY32F071xB-based UV-K1 / UV-K5(8) v3,
-4. the build actually contains the heartbeat code (`make size`, `nm`),
-5. SWD is available to inspect `SCB->VTOR`, the stack pointer and the fault
-   status registers.
+A temporary boot indicator can be added while bringing up new hardware; it is
+not part of the current build.
 
 The bootloader's clock configuration is assumed to be unchanged. A wrong clock
-would make the heartbeat too fast or too slow rather than preventing it.
+would make the SysTick rate wrong and break timing-dependent code later.
 
 ## Flashing
 
@@ -126,7 +123,7 @@ script and from the flashing instructions.
 ## Design notes for the next milestone
 
 The portable interface currently consists of `platform::init()` and
-`platform::poll()` in `src/2_hal/Platform.h`. The UV-K5v3 implementation wires
-them to the board and timebase. Later milestones will replace the direct
-`poll()` call in `main.cpp` with the application framework while keeping the
-same platform boundary.
+`platform::poll()` in `src/2_hal/Platform.h`. The UV-K5v3 implementation starts
+the timebase and currently leaves `poll()` empty. Later milestones will replace
+the direct `poll()` call in `main.cpp` with the application framework while
+keeping the same platform boundary.
