@@ -43,10 +43,16 @@ LDSCRIPT := $(PLATFORM_DIR)/py32f071xb.ld
 # -nostartfiles: the startup file in boot/ provides the reset handler and the
 #   vector table, so the toolchain startup must not be linked in.
 # --gc-sections: drop functions and data that are never referenced.
+# -z max-page-size=8: the application starts at 0x08002800, which is not page
+#   aligned. With the default 4 KiB page size the ELF load segment starts at
+#   0x08002000 and covers part of the bootloader. A tool that flashes the ELF
+#   by segments could then overwrite the bootloader. A small alignment keeps
+#   the ELF inside the application area; the .bin is unaffected either way.
 LDFLAGS := $(ARCH_FLAGS) -nostartfiles \
            -Wl,--gc-sections \
            -Wl,--print-memory-usage \
            -Wl,-Map=$(BUILD_DIR)/$(TARGET).map \
+           -Wl,-z,max-page-size=8 \
            -Wl,--no-warn-rwx-segments
 
 # nano.specs selects the small newlib C library. nosys.specs provides the
