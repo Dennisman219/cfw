@@ -58,10 +58,14 @@ PLATFORM_CPPFLAGS := -DPY32F071xB -DUSE_FULL_LL_DRIVER
 
 PLATFORM_INCLUDES := \
 	-I$(PLATFORM_DIR)/4_cmsis \
+	-I$(PLATFORM_DIR)/3_hardware \
+	-I$(PLATFORM_DIR)/2_hal \
 	-I$(PLATFORM_DIR)/boot
 
 # Sources --------------------------------------------------------------------
 # Paths are relative to this platform directory.
 PLATFORM_SRCS := \
 	boot/startup_py32f071xx.s \
-	boot/system_py32f071.c
+	boot/system_py32f071.c \
+	2_hal/platform.cpp \
+	3_hardware/timebase.cpp

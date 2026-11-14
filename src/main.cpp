@@ -2,15 +2,19 @@
  * @file main.cpp
  * @brief Entry point of the platform-independent firmware.
  *
- * This file deliberately contains no hardware code. The platform provides
- * the implementation of platform::init() and platform::poll(); later
+ * This file deliberately contains no hardware-specific code. Each platform
+ * implements platform::init() and platform::poll() from Platform.h. Later
  * milestones will start the application framework here instead of polling the
  * platform directly.
  */
 
+#include "Platform.h"
+
 int main()
 {
+    platform::init();
+
     while (true) {
-        // Boot skeleton: the platform code will run here in a later commit.
+        platform::poll();
     }
 }

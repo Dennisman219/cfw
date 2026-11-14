@@ -52,7 +52,8 @@ ALL_OBJS := $(PORTABLE_OBJS) $(PLATFORM_OBJS)
 # -MMD -MP lets the compiler write a .d file next to every object. These files
 # are included at the bottom of this Makefile and make header changes trigger a
 # rebuild of the files that use them.
-CPPFLAGS := $(PLATFORM_CPPFLAGS) $(PLATFORM_INCLUDES) -MMD -MP
+PORTABLE_INCLUDES := -I$(SRC_DIR) -I$(SRC_DIR)/2_hal
+CPPFLAGS := $(PORTABLE_INCLUDES) $(PLATFORM_CPPFLAGS) $(PLATFORM_INCLUDES) -MMD -MP
 
 .PHONY: all clean size verify
 
