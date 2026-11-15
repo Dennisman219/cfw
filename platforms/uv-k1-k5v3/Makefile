@@ -78,6 +78,7 @@ PLATFORM_SRCS := \
 	2_hal/Display.cpp \
 	2_hal/Platform.cpp \
 	2_hal/Radio.cpp \
+	2_hal/StatusLed.cpp \
 	3_hardware/Adc1.cpp \
 	3_hardware/Backlight.cpp \
 	3_hardware/BK4819.cpp \
