@@ -73,6 +73,15 @@ PLATFORM_INCLUDES := \
 PLATFORM_SRCS := \
 	boot/startup_py32f071xx.s \
 	boot/system_py32f071.c \
+	2_hal/Battery.cpp \
 	2_hal/Clock.cpp \
+	2_hal/Display.cpp \
+	2_hal/Platform.cpp \
+	2_hal/Radio.cpp \
+	3_hardware/Adc1.cpp \
+	3_hardware/Backlight.cpp \
+	3_hardware/BK4819.cpp \
+	3_hardware/Board.cpp \
 	3_hardware/Fault.cpp \
+	3_hardware/ST7565.cpp \
 	3_hardware/SysTickTimer.cpp
