@@ -1,5 +1,5 @@
 /**
- * @file fault.cpp
+ * @file Fault.cpp
  * @brief Hard-fault handler and visible fault indication.
  *
  * The handler configures the backlight pin itself instead of relying on the
@@ -7,7 +7,7 @@
  * so the fault path must be self-contained.
  */
 
-#include "fault.h"
+#include "Fault.h"
 
 #include "py32f071_ll_bus.h"
 #include "py32f071_ll_gpio.h"
@@ -55,20 +55,13 @@ void fault_backlight_init()
 
 } // namespace
 
-/**
- * @brief Cortex-M0+ hard-fault vector.
- *
- * The name must stay unchanged because the startup vector table refers to it.
- */
-extern "C" void HardFault_Handler(void)
-{
-    platform::panic();
-}
-
 namespace platform
 {
 
-[[noreturn]] void panic()
+/** Definition of the single fault handler instance declared in Fault.h. */
+Fault fault;
+
+[[noreturn]] void Fault::panic()
 {
     // Stop interrupts first: a periodic interrupt would otherwise keep
     // disturbing the blink loop, and the fault may have been caused by one.
@@ -79,3 +72,13 @@ namespace platform
 }
 
 } // namespace platform
+
+/**
+ * @brief Cortex-M0+ hard-fault vector.
+ *
+ * The name must stay unchanged because the startup vector table refers to it.
+ */
+extern "C" void HardFault_Handler(void)
+{
+    platform::fault.panic();
+}
