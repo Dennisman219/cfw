@@ -73,4 +73,6 @@ PLATFORM_INCLUDES := \
 PLATFORM_SRCS := \
 	boot/startup_py32f071xx.s \
 	boot/system_py32f071.c \
+	2_hal/Clock.cpp \
 	3_hardware/Fault.cpp \
+	3_hardware/SysTickTimer.cpp
