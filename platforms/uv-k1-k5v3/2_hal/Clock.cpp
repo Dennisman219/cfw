@@ -61,14 +61,3 @@ void Clock::tick()
 }
 
 } // namespace platform
-
-/**
- * @brief SysTick interrupt handler, called once per millisecond.
- *
- * The name and C linkage matter: the startup file's vector table refers to the
- * symbol "SysTick_Handler". C++ would otherwise mangle the name.
- */
-extern "C" void SysTick_Handler(void)
-{
-    platform::clock.tick();
-}

@@ -82,7 +82,6 @@ PLATFORM_SRCS := \
 	3_hardware/Adc1.cpp \
 	3_hardware/Backlight.cpp \
 	3_hardware/BK4819.cpp \
-	3_hardware/Board.cpp \
 	3_hardware/Fault.cpp \
 	3_hardware/ST7565.cpp \
 	3_hardware/SysTickTimer.cpp

@@ -24,10 +24,8 @@ void init();
 
 /**
  * @brief Run one iteration of background platform work.
- *
- * Called repeatedly from the main loop. It must return quickly and must not
- * block. A platform with no background work may leave this empty. Later the
- * application framework will call this between application updates.
+ * Here anything thats needs to be periodically happen for the platform can happen, like watchdog kicking or key scanning.
+ * It must return quickly and must not block. A platform with no background work may leave this empty.
  */
 void poll();
 
